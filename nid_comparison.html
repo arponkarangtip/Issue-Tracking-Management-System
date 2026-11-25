@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b132b">
+  <title>Issue Tracking &amp; Management System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="assets/css/style.css?v=17" rel="stylesheet">
+</head>
+<body>
+  <main class="main-scroll-area" id="mainScrollArea">
+    <div class="main-inner-container">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<div class="hero-header d-flex flex-wrap justify-content-between align-items-end mb-4 gap-3">
+    <div>
+        <h1>NID Comparison Dashboard</h1>
+        <p>Upload your Actual NID list and the Upazila / Union data. Matches, mismatches, and duplicate NIDs are detected automatically in your browser.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn-3d purple" id="sampleBtn"><i class="bi bi-database-fill-add me-1"></i> Load Sample</button>
+    </div>
+</div>
+
+<section class="slab" data-tilt>
+    <div class="controls">
+        <label class="drop" id="dropA">
+            <b>1. Actual NID File</b>
+            <small>NIDs in column A &middot; .xlsx .xls .csv</small>
+            <span class="fn" id="fnA">Click or drop a file</span>
+            <input id="actualFile" type="file" accept=".xlsx,.xls,.csv">
+        </label>
+        <label class="drop" id="dropB">
+            <b>2. Upazila / Union Data File</b>
+            <small>NID, Mobile, Account No, Name in columns A&ndash;D</small>
+            <span class="fn" id="fnB">Click or drop a file</span>
+            <input id="sourceFile" type="file" accept=".xlsx,.xls,.csv">
+        </label>
+    </div>
+
+    <div class="d-flex gap-2 flex-wrap align-items-center mt-3">
+        <button type="button" class="btn-3d" id="compareBtn" disabled>
+            <i class="bi bi-arrow-left-right me-1"></i> Compare NIDs
+        </button>
+        <button type="button" class="btn-3d ok" id="exportMatched" disabled>
+            <i class="bi bi-file-earmark-check me-1"></i> Download Matched Only
+        </button>
+        <button type="button" class="btn-3d warn" id="exportAll" disabled>
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Download Full Report
+        </button>
+        <button type="button" class="btn-3d alt" id="resetNidBtn" disabled>
+            <i class="bi bi-arrow-counterclockwise me-1"></i> Clear
+        </button>
+    </div>
+
+    <div class="note mt-3">
+        Files are processed locally in your browser and never uploaded. NIDs are read as text so leading zeros are preserved. The first worksheet of each file is used, and the full report exports separate Excel sheets for All, Matched, Unmatched, and Duplicate records.
+    </div>
+</section>
+
+<section class="stats-grid mb-4" id="stats">
+    <button type="button" class="slab stat b" data-tilt data-f="all">
+        <span>Actual NIDs (Sheet A)</span>
+        <strong id="totalA">0</strong>
+    </button>
+    <button type="button" class="slab stat c" data-tilt data-f="all">
+        <span>Upazila / Union Records</span>
+        <strong id="totalB">0</strong>
+    </button>
+    <button type="button" class="slab stat g" data-tilt data-f="matched">
+        <span>Matched <small id="matchPctLabel" class="fw-normal" style="color:var(--mute);">(0%)</small></span>
+        <strong id="matchedCount">0</strong>
+        <div class="bar"><i id="bar" style="width:0%;"></i></div>
+    </button>
+    <button type="button" class="slab stat r" data-tilt data-f="unmatched">
+        <span>Did Not Match</span>
+        <strong id="unmatchedCount">0</strong>
+    </button>
+    <button type="button" class="slab stat a" data-tilt data-f="duplicate">
+        <span>Duplicate Records</span>
+        <strong id="dupCount">0</strong>
+    </button>
+</section>
+
+<section class="slab" data-tilt>
+    <div class="head">
+        <h2>Comparison Results <span class="note" id="shown"></span></h2>
+        <input id="search" type="search" class="input-3d" style="min-width:min(320px,100%);" placeholder="Search NID, name, mobile, account..." aria-label="Search records">
+    </div>
+
+    <div class="chips" id="chips">
+        <button type="button" class="chip on" data-f="all">All</button>
+        <button type="button" class="chip" data-f="matched">Matched</button>
+        <button type="button" class="chip" data-f="unmatched">Did Not Match</button>
+        <button type="button" class="chip" data-f="duplicate">Duplicates</button>
+    </div>
+
+    <div class="tablewrap">
+        <table class="table-3d">
+            <thead>
+                <tr>
+                    <th>NID Actual (A)</th>
+                    <th>NID from Upazila / Union</th>
+                    <th>Mobile</th>
+                    <th>Account No</th>
+                    <th>Name (EN)</th>
+                    <th>Match with A</th>
+                    <th>Did Not Match A</th>
+                    <th>Duplicate</th>
+                </tr>
+            </thead>
+            <tbody id="results">
+                <tr>
+                    <td colspan="8" class="empty">Add both files above, then click <strong>Compare NIDs</strong> (or click <strong>Load Sample</strong>).</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const $ = id => document.getElementById(id);
+    let actualNids = [], sourceRows = [], results = [], filter = 'all';
+
+    const clean = v => v == null ? '' : String(v).trim().replace(/\.0$/, '');
+    const norm  = v => clean(v).replace(/\s/g, '').toUpperCase();
+    const esc   = s => clean(s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+    const notify = msg => window.showToast ? window.showToast(msg) : alert(msg);
+
+    async function readFile(file) {
+        const wb = XLSX.read(await file.arrayBuffer(), { type: 'array', raw: false });
+        return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '', raw: false });
+    }
+
+    const firstColumn = rows => rows.slice(1).map(r => clean(r[0])).filter(Boolean);
+    const parseSource = rows => rows.slice(1)
+        .filter(r => r.some(v => clean(v)))
+        .map(r => ({
+            nid: clean(r[0]),
+            mobile: clean(r[1]),
+            account: clean(r[2]),
+            name: clean(r[3])
+        }));
+
+    function ready() {
+        $('compareBtn').disabled = !($('actualFile').files[0] && $('sourceFile').files[0]);
+    }
+
+    function wire(inp, drop, fn) {
+        inp.addEventListener('change', () => {
+            const f = inp.files[0];
+            $(fn).textContent = f ? f.name : 'Click or drop a file';
+            drop.classList.toggle('done', !!f);
+            ready();
+        });
+        ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => {
+            e.preventDefault();
+            drop.classList.add('over');
+        }));
+        ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => {
+            e.preventDefault();
+            drop.classList.remove('over');
+        }));
+        drop.addEventListener('drop', e => {
+            if (e.dataTransfer.files[0]) {
+                inp.files = e.dataTransfer.files;
+                inp.dispatchEvent(new Event('change'));
+            }
+        });
+    }
+
+    wire($('actualFile'), $('dropA'), 'fnA');
+    wire($('sourceFile'), $('dropB'), 'fnB');
+
+    $('compareBtn').onclick = async () => {
+        try {
+            const [a, b] = await Promise.all([
+                readFile($('actualFile').files[0]),
+                readFile($('sourceFile').files[0])
+            ]);
+            actualNids = firstColumn(a);
+            sourceRows = parseSource(b);
+            runCompare();
+            notify('NID comparison complete');
+        } catch (e) {
+            notify('Could not read file. Upload a valid Excel or CSV file.');
+            console.error(e);
+        }
+    };
+
+    function runCompare() {
+        const setA = new Set(actualNids.map(norm).filter(Boolean));
+        const count = {};
+        sourceRows.forEach(r => {
+            const k = norm(r.nid);
+            if (k) count[k] = (count[k] || 0) + 1;
+        });
+
+        results = sourceRows.map(r => {
+            const k = norm(r.nid);
+            return {
+                ...r,
+                match: setA.has(k),
+                dupCount: count[k] > 1 ? count[k] : 0
+            };
+        });
+
+        const m = results.filter(r => r.match).length;
+        const pct = results.length ? Math.round((m / results.length) * 100) : 0;
+
+        $('totalA').textContent = actualNids.length;
+        $('totalB').textContent = sourceRows.length;
+        $('matchedCount').textContent = m;
+        $('unmatchedCount').textContent = results.length - m;
+        $('dupCount').textContent = results.filter(r => r.dupCount).length;
+        $('matchPctLabel').textContent = `(${pct}%)`;
+        $('bar').style.width = pct + '%';
+
+        ['exportMatched', 'exportAll', 'resetNidBtn'].forEach(id => $(id).disabled = !results.length);
+        render();
+    }
+
+    function view() {
+        const q = norm($('search').value);
+        return results.filter(r =>
+            (filter === 'all' ||
+                (filter === 'matched' && r.match) ||
+                (filter === 'unmatched' && !r.match) ||
+                (filter === 'duplicate' && r.dupCount)) &&
+            (!q || [r.nid, r.mobile, r.account, r.name].some(v => norm(v).includes(q)))
+        );
+    }
+
+    function render() {
+        const rows = view();
+        document.querySelectorAll('#chips .chip').forEach(c => c.classList.toggle('on', c.dataset.f === filter));
+        document.querySelectorAll('#stats .stat').forEach(c => c.classList.toggle('on', c.dataset.f === filter && filter !== 'all'));
+        $('shown').textContent = results.length ? `(${rows.length} of ${results.length})` : '';
+
+        $('results').innerHTML = rows.length
+            ? rows.map(r => `
+                <tr class="${r.match ? 'match' : 'nomatch'}${r.dupCount ? ' dup' : ''}">
+                    <td class="fw-bold text-info">${r.match ? esc(r.nid) : ''}</td>
+                    <td>${esc(r.nid)}</td>
+                    <td>${esc(r.mobile)}</td>
+                    <td>${esc(r.account)}</td>
+                    <td>${esc(r.name)}</td>
+                    <td>${r.match ? `<span class="tag-pill tag-green">${esc(r.nid)}</span>` : ''}</td>
+                    <td>${r.match ? '' : `<span class="tag-pill tag-red">${esc(r.nid)}</span>`}</td>
+                    <td>${r.dupCount ? `<span class="tag-pill tag-amber">Duplicate &times;${r.dupCount}</span>` : ''}</td>
+                </tr>
+            `).join('')
+            : `<tr><td colspan="8" class="empty">${results.length ? 'No records match this search or filter.' : 'Add both files above, then click Compare NIDs.'}</td></tr>`;
+    }
+
+    $('search').addEventListener('input', render);
+    $('chips').addEventListener('click', e => {
+        const c = e.target.closest('.chip');
+        if (c) { filter = c.dataset.f; render(); }
+    });
+    $('stats').addEventListener('click', e => {
+        const c = e.target.closest('.stat');
+        if (c) { filter = filter === c.dataset.f ? 'all' : c.dataset.f; render(); }
+    });
+
+    const HEAD = ['NID Actual from our sheet', 'NID from Upazila or Union', 'Mobile', 'Account No', 'Name (EN)', 'Match With A', 'Did not Match with A', 'Duplicate'];
+    const toRow = r => [
+        r.match ? r.nid : '',
+        r.nid,
+        r.mobile,
+        r.account,
+        r.name,
+        r.match ? r.nid : '',
+        r.match ? '' : r.nid,
+        r.dupCount ? 'Duplicate x' + r.dupCount : ''
+    ];
+
+    function buildSheet(rows) {
+        const ws = XLSX.utils.aoa_to_sheet([HEAD, ...rows.map(toRow)]);
+        ws['!cols'] = [26, 26, 18, 24, 28, 24, 24, 16].map(w => ({ wch: w }));
+        return ws;
+    }
+
+    $('exportMatched').onclick = () => {
+        const m = results.filter(r => r.match);
+        if (!m.length) return notify('There are no matched records to download');
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, buildSheet(m), 'Matched');
+        XLSX.writeFile(wb, 'NID_Matched_Only.xlsx');
+        notify('Downloaded matched records');
+    };
+
+    $('exportAll').onclick = () => {
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, buildSheet(results), 'All Records');
+        XLSX.utils.book_append_sheet(wb, buildSheet(results.filter(r => r.match)), 'Matched');
+        XLSX.utils.book_append_sheet(wb, buildSheet(results.filter(r => !r.match)), 'Unmatched');
+        XLSX.utils.book_append_sheet(wb, buildSheet(results.filter(r => r.dupCount)), 'Duplicates');
+        XLSX.writeFile(wb, 'NID_Full_Comparison_Report.xlsx');
+        notify('Downloaded full 4-sheet report');
+    };
+
+    $('resetNidBtn').onclick = () => {
+        actualNids = []; sourceRows = []; results = []; filter = 'all';
+        $('actualFile').value = ''; $('sourceFile').value = '';
+        $('fnA').textContent = 'Click or drop a file'; $('fnB').textContent = 'Click or drop a file';
+        $('dropA').classList.remove('done'); $('dropB').classList.remove('done');
+        $('search').value = '';
+        runCompare();
+        ready();
+        notify('Cleared comparison data');
+    };
+
+    $('sampleBtn').onclick = () => {
+        actualNids = ['5914956435', '3253675618', '2864876947', '6014864323', '3314858543', '1026852499'];
+        sourceRows = [
+            { nid: '3253675618', mobile: '01700000001', account: '123456789', name: 'Sample Person 1' },
+            { nid: '9999999999', mobile: '01700000002', account: '987654321', name: 'Sample Person 2' },
+            { nid: '6014864323', mobile: '01700000003', account: '112233445', name: 'Sample Person 3' },
+            { nid: '1231231231', mobile: '01700000004', account: '554433221', name: 'Sample Person 4' },
+            { nid: '3253675618', mobile: '01700000005', account: '667788990', name: 'Sample Person 5' },
+            { nid: '9999999999', mobile: '01700000006', account: '443322110', name: 'Sample Person 6' }
+        ];
+        runCompare();
+        notify('Sample NID dataset loaded');
+    };
+});
+</script>
+
+
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="assets/js/gsheet-api.js"></script>
+  <script src="assets/js/shell.js"></script>
+  <script src="assets/js/reactive3d.js?v=17"></script>
+  <script src="assets/js/app.js?v=17"></script>
+  <script>
+initStationaryShell("nid_comparison.html", "NID Comparison Dashboard");
+  </script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Staff Sign In | Issue Tracking &amp; Management System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="assets/css/style.css?v=18" rel="stylesheet">
+</head>
+<body class="scene d-flex align-items-center justify-content-center min-vh-100 py-4 px-3">
+  <div class="cubes" aria-hidden="true" id="cubes"></div>
+
+  <div class="container position-relative z-2">
+    <div class="row justify-content-center">
+      <div class="col-12 col-sm-10 col-md-7 col-lg-5">
+        <div class="hero-header text-center mb-4">
+          <h1 style="font-size:clamp(26px,4vw,38px);">IssueTracker</h1>
+          <p class="mx-auto small">Authorized Admin &amp; Intern Portal &bull; Mobile, Tablet, Laptop &amp; PC Ready</p>
+        </div>
+
+        <div class="slab" data-tilt>
+          <div id="loginAlert" class="alert alert-danger py-2 small d-none"></div>
+
+          <form id="loginForm" autocomplete="off">
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-info">Email Address</label>
+              <input type="email" id="loginEmail" class="input-3d w-100" required placeholder="admin@issuetracker.local">
+            </div>
+            <div class="mb-4">
+              <label class="form-label small fw-bold text-info">Password</label>
+              <div class="password-field-wrap">
+                <input type="password" id="loginPassword" class="input-3d w-100 pe-5" required placeholder="••••••••">
+                <button type="button" class="password-toggle-btn" id="toggleLoginPass" aria-label="Show or hide password" title="Show / Hide Password">
+                  <i class="bi bi-eye-fill" id="toggleLoginPassIcon"></i>
+                </button>
+              </div>
+            </div>
+            <button type="submit" id="signInBtn" class="btn-3d w-100">
+              <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to Workspace
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-3d" id="toast" role="status"></div>
+  <script src="assets/js/gsheet-api.js"></script>
+  <script src="assets/js/reactive3d.js?v=18"></script>
+  <script>
+    if (GSheetDB.getUser()) window.location.href = "dashboard.html";
+
+    function fillCreds(email, pass) {
+      document.getElementById("loginEmail").value = email;
+      document.getElementById("loginPassword").value = pass;
+      if (window.showToast) window.showToast("Filled credentials for " + email);
+    }
+
+    const togglePassBtn = document.getElementById("toggleLoginPass");
+    const passInput = document.getElementById("loginPassword");
+    const passIcon = document.getElementById("toggleLoginPassIcon");
+    togglePassBtn.addEventListener("click", () => {
+      const isHidden = passInput.type === "password";
+      passInput.type = isHidden ? "text" : "password";
+      passIcon.className = isHidden ? "bi bi-eye-slash-fill" : "bi bi-eye-fill";
+    });
+
+    document.getElementById("loginForm").addEventListener("submit", async ev => {
+      ev.preventDefault();
+      const alertBox = document.getElementById("loginAlert");
+      alertBox.classList.add("d-none");
+
+      if (!GSheetDB.isConfigured()) {
+        alertBox.innerHTML = 'Google Sheet backend URL is not configured yet. Open <code>assets/js/gsheet-api.js</code> and paste your Apps Script Web App URL into <code>GSHEET_WEBAPP_URL</code>.';
+        alertBox.classList.remove("d-none");
+        return;
+      }
+
+      const btn = document.getElementById("signInBtn");
+      btn.disabled = true;
+      btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Signing in...';
+
+      try {
+        const res = await GSheetDB.post({
+          action: "login",
+          email: document.getElementById("loginEmail").value,
+          password: passInput.value
+        });
+        if (res.status === "success") {
+          localStorage.setItem("itp_user", JSON.stringify(res.user));
+          window.location.href = "dashboard.html";
+        } else {
+          alertBox.textContent = res.message || "Invalid credentials.";
+          alertBox.classList.remove("d-none");
+        }
+      } catch (err) {
+        alertBox.textContent = "Unable to connect to Google Sheet server. Please verify deployment permissions ('Anyone').";
+        alertBox.classList.remove("d-none");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-box-arrow-in-right me-1"></i> Sign In to Workspace';
+      }
+    });
+  </script>
+</body>
+</html>

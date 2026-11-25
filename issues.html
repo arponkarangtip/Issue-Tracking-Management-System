@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b132b">
+  <title>Issue Tracking &amp; Management System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="assets/css/style.css?v=17" rel="stylesheet">
+</head>
+<body>
+  <main class="main-scroll-area" id="mainScrollArea">
+    <div class="main-inner-container">
+
+<div class="hero-header d-flex flex-wrap justify-content-between align-items-end mb-4 gap-2">
+  <div>
+    <h1 id="regTitle">All Issues Management Registry</h1>
+    <p id="regSub">Loading issues from Google Sheets...</p>
+  </div>
+  <a href="submit_issue.html" class="btn-3d text-decoration-none"><i class="bi bi-plus-circle me-1"></i> Log New Issue</a>
+</div>
+
+<section class="slab" data-tilt>
+  <div class="row g-2">
+    <div class="col-12 col-md-6 col-lg-3">
+      <input type="search" id="qSearch" class="input-3d w-100 py-2" placeholder="Search Tracker ID, Title, Reporter...">
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <select id="qStatus" class="input-3d w-100 py-2">
+        <option value="">All Statuses</option>
+        <option>Submitted</option><option>Assigned</option><option>In Progress</option>
+        <option>Waiting for Info</option><option>Resolved</option><option>Closed</option><option>Reopened</option>
+      </select>
+    </div>
+    <div class="col-6 col-md-3 col-lg-2">
+      <select id="qPriority" class="input-3d w-100 py-2">
+        <option value="">All Priorities</option>
+        <option>Low</option><option>Medium</option><option>High</option><option>Critical</option>
+      </select>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+      <select id="qCategory" class="input-3d w-100 py-2"><option value="">All Categories</option></select>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+      <select id="qIntern" class="input-3d w-100 py-2"><option value="">All Interns</option></select>
+    </div>
+    <div class="col-12 col-md-4 col-lg-1">
+      <button type="button" id="resetReg" class="btn-3d alt w-100 py-2">Reset</button>
+    </div>
+  </div>
+</section>
+
+<section class="slab" data-tilt>
+  <div class="tablewrap">
+    <table class="table-3d">
+      <thead>
+        <tr>
+          <th>Tracker ID</th>
+          <th>Title</th>
+          <th>Reported By</th>
+          <th>Department</th>
+          <th>Category</th>
+          <th>Priority</th>
+          <th>Assigned Intern</th>
+          <th>Status</th>
+          <th>SLA Due</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="regBody"><tr><td colspan="10" class="empty">Loading registry...</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="assets/js/gsheet-api.js"></script>
+  <script src="assets/js/shell.js"></script>
+  <script src="assets/js/reactive3d.js?v=17"></script>
+  <script src="assets/js/app.js?v=17"></script>
+  <script>
+
+const user = initStationaryShell("issues.html", "Issues Registry");
+const isAdmin = user.role === "admin";
+if (!isAdmin) document.getElementById("regTitle").textContent = "My Assigned Issues Queue";
+
+const qs = new URLSearchParams(window.location.search);
+if (qs.get("search")) document.getElementById("qSearch").value = qs.get("search");
+if (qs.get("status")) document.getElementById("qStatus").value = qs.get("status");
+
+let db = null;
+
+async function loadRegistry() {
+  db = await GSheetDB.get({ action: "bundle" });
+  renderNotifications(db.notifications, user.id);
+
+  const catSel = document.getElementById("qCategory");
+  (db.categories || []).forEach(c => catSel.insertAdjacentHTML("beforeend", `<option value="${c.id}">${e(c.name)}</option>`));
+  const intSel = document.getElementById("qIntern");
+  (db.users || []).filter(u => u.role === "intern").forEach(u => intSel.insertAdjacentHTML("beforeend", `<option value="${u.id}">${e(u.full_name)}</option>`));
+
+  renderRegistry();
+}
+
+function renderRegistry() {
+  const q = document.getElementById("qSearch").value.toLowerCase();
+  const st = document.getElementById("qStatus").value;
+  const pr = document.getElementById("qPriority").value;
+  const cat = document.getElementById("qCategory").value;
+  const intId = document.getElementById("qIntern").value;
+  const overdueOnly = qs.get("overdue") === "1";
+
+  const catMap = Object.fromEntries((db.categories || []).map(c => [String(c.id), c.name]));
+  const deptMap = Object.fromEntries((db.departments || []).map(d => [String(d.id), d.name]));
+  const userMap = Object.fromEntries((db.users || []).map(u => [String(u.id), u.full_name]));
+
+  const rows = (db.issues || []).filter(i => {
+    if (!isAdmin && String(i.assigned_intern_id) !== String(user.id)) return false;
+    if (q && ![i.tracker_id, i.title, i.reported_by_name, i.reported_by_contact].some(v => String(v || "").toLowerCase().includes(q))) return false;
+    if (st && i.status !== st) return false;
+    if (pr && i.priority !== pr) return false;
+    if (cat && String(i.category_id) !== cat) return false;
+    if (intId && String(i.assigned_intern_id) !== intId) return false;
+    if (overdueOnly && (["Resolved", "Closed"].includes(i.status) || !i.sla_due_at || new Date(i.sla_due_at).getTime() >= Date.now())) return false;
+    return true;
+  }).reverse();
+
+  document.getElementById("regSub").textContent = `Showing ${rows.length} matching records in Google Sheets`;
+  document.getElementById("regBody").innerHTML = rows.length ? rows.map(r => `
+    <tr>
+      <td class="fw-bold text-info">${e(r.tracker_id)}</td>
+      <td>${e(r.title)}</td>
+      <td>${e(r.reported_by_name)}</td>
+      <td>${e(deptMap[String(r.department_id)] || "-")}</td>
+      <td><span class="tag-pill tag-purple">${e(catMap[String(r.category_id)] || "-")}</span></td>
+      <td>${getPriorityBadge(r.priority)}</td>
+      <td>${r.assigned_intern_id ? e(userMap[String(r.assigned_intern_id)] || "Intern") : '<span style="color:var(--mute);">Unassigned</span>'}</td>
+      <td>${getStatusBadge(r.status)}</td>
+      <td class="small">${e(String(r.sla_due_at || "").slice(0, 16))}</td>
+      <td><a href="issue_view.html?id=${r.id}" class="btn-3d py-1 px-3 text-decoration-none">Open</a></td>
+    </tr>
+  `).join("") : `<tr><td colspan="10" class="empty">No matching issue records found.</td></tr>`;
+}
+
+["qSearch", "qStatus", "qPriority", "qCategory", "qIntern"].forEach(id => {
+  document.getElementById(id).addEventListener("input", renderRegistry);
+  document.getElementById(id).addEventListener("change", renderRegistry);
+});
+document.getElementById("resetReg").addEventListener("click", () => {
+  ["qSearch", "qStatus", "qPriority", "qCategory", "qIntern"].forEach(id => document.getElementById(id).value = "");
+  renderRegistry();
+});
+
+loadRegistry();
+
+  </script>
+</body>
+</html>

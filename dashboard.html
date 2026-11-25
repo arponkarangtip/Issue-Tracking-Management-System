@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b132b">
+  <title>Issue Tracking &amp; Management System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="assets/css/style.css?v=17" rel="stylesheet">
+</head>
+<body>
+  <main class="main-scroll-area" id="mainScrollArea">
+    <div class="main-inner-container">
+
+<div class="hero-header d-flex flex-wrap justify-content-between align-items-end mb-4 gap-3">
+  <div>
+    <h1 id="dashHeading">Dashboard</h1>
+    <p>Live Google Sheets telemetry for issue assignments, SLA resolution rates, and intern workload performance.</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="submit_issue.html" class="btn-3d text-decoration-none"><i class="bi bi-plus-lg me-1"></i> Log New Issue</a>
+    <a href="nid_comparison.html" class="btn-3d purple text-decoration-none"><i class="bi bi-person-vcard me-1"></i> NID Comparison</a>
+    <a href="reports.html" id="dashExportBtn" class="btn-3d ok text-decoration-none d-none"><i class="bi bi-file-earmark-excel me-1"></i> Export Reports</a>
+  </div>
+</div>
+
+<section class="slab" data-tilt>
+  <div class="row g-2 align-items-end">
+    <div class="col-6 col-md-4 col-lg-2">
+      <label class="small d-block mb-1" style="color:var(--mute);">From Date</label>
+      <input type="date" id="fFrom" class="input-3d w-100 py-2">
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+      <label class="small d-block mb-1" style="color:var(--mute);">To Date</label>
+      <input type="date" id="fTo" class="input-3d w-100 py-2">
+    </div>
+    <div class="col-12 col-md-4 col-lg-2">
+      <label class="small d-block mb-1" style="color:var(--mute);">Category</label>
+      <select id="fCat" class="input-3d w-100 py-2"><option value="0">All Categories</option></select>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2 admin-only-filter">
+      <label class="small d-block mb-1" style="color:var(--mute);">Department</label>
+      <select id="fDept" class="input-3d w-100 py-2"><option value="0">All Departments</option></select>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2 admin-only-filter">
+      <label class="small d-block mb-1" style="color:var(--mute);">Intern</label>
+      <select id="fIntern" class="input-3d w-100 py-2"><option value="0">All Interns</option></select>
+    </div>
+    <div class="col-12 col-md-4 col-lg-2 d-flex gap-2 ms-auto">
+      <button type="button" id="applyDashFilter" class="btn-3d py-2 px-3 flex-fill">Filter</button>
+      <button type="button" id="resetDashFilter" class="btn-3d alt py-2 px-3">Reset</button>
+    </div>
+  </div>
+</section>
+
+<section class="stats-grid mb-3">
+  <a href="issues.html" class="slab stat b text-decoration-none" data-tilt>
+    <span id="kpiTotalLabel">Total Issues</span>
+    <strong id="kpiTotal">0</strong>
+  </a>
+  <a href="issues.html?status=In+Progress" class="slab stat c text-decoration-none" data-tilt>
+    <span>In Progress / Assigned</span>
+    <strong id="kpiProg">0</strong>
+  </a>
+  <a href="issues.html?status=Resolved" class="slab stat g text-decoration-none" data-tilt>
+    <span>Resolved &amp; Closed <small id="kpiPct" class="fw-normal">(0%)</small></span>
+    <strong id="kpiSolved">0</strong>
+    <div class="bar"><i id="kpiBar" style="width:0%;"></i></div>
+  </a>
+  <a href="issues.html?overdue=1" class="slab stat r text-decoration-none" data-tilt>
+    <span>Overdue (SLA Breached)</span>
+    <strong id="kpiOverdue">0</strong>
+  </a>
+  <a href="issues.html?status=Submitted" class="slab stat a text-decoration-none" data-tilt>
+    <span>Pending / Reopened</span>
+    <strong id="kpiPending">0</strong>
+  </a>
+</section>
+
+<section class="stats-grid mb-4">
+  <div class="slab stat p" data-tilt><span>New (Submitted)</span><strong id="kpiNew">0</strong></div>
+  <div class="slab stat c" data-tilt><span>Assigned Queue</span><strong id="kpiAssigned">0</strong></div>
+  <div class="slab stat g" data-tilt><span>Resolved</span><strong id="kpiResolved">0</strong></div>
+  <div class="slab stat r" data-tilt><span>Reopened</span><strong id="kpiReopened">0</strong></div>
+  <div class="slab stat b" data-tilt><span>Avg Resolution Time</span><strong id="kpiAvgHrs">0h</strong></div>
+</section>
+
+<div class="row g-3 mb-4">
+  <div class="col-12 col-lg-6">
+    <div class="slab h-100 mb-0" data-tilt>
+      <h2 class="h6 fw-bold text-info mb-3">Monthly Issue Submission Trend</h2>
+      <div class="chart-box"><canvas id="monthlyChart"></canvas></div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-6">
+    <div class="slab h-100 mb-0" data-tilt>
+      <h2 class="h6 fw-bold text-info mb-3">Daily Issue Submission Trend (Last 14 Days)</h2>
+      <div class="chart-box"><canvas id="dailyChart"></canvas></div>
+    </div>
+  </div>
+  <div class="col-12 col-md-6 col-xl-4">
+    <div class="slab h-100 mb-0" data-tilt>
+      <h2 class="h6 fw-bold text-info mb-3">Issues by Status</h2>
+      <div class="chart-box-sq"><canvas id="statusChart"></canvas></div>
+    </div>
+  </div>
+  <div class="col-12 col-md-6 col-xl-4">
+    <div class="slab h-100 mb-0" data-tilt>
+      <h2 class="h6 fw-bold text-info mb-3">Issues by Priority</h2>
+      <div class="chart-box-sq"><canvas id="priorityChart"></canvas></div>
+    </div>
+  </div>
+  <div class="col-12 col-md-12 col-xl-4">
+    <div class="slab h-100 mb-0" data-tilt>
+      <h2 class="h6 fw-bold text-info mb-3">Issues by Category (Top 10)</h2>
+      <div class="chart-box-sq"><canvas id="categoryChart"></canvas></div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-6 admin-only-chart">
+    <div class="slab h-100 mb-0" data-tilt>
+      <h2 class="h6 fw-bold text-info mb-3">Department-wise Issues</h2>
+      <div class="chart-box"><canvas id="deptChart"></canvas></div>
+    </div>
+  </div>
+  <div class="col-12 col-lg-6 admin-only-chart">
+    <div class="slab h-100 mb-0" data-tilt>
+      <h2 class="h6 fw-bold text-info mb-3">Intern-wise Performance</h2>
+      <div class="chart-box"><canvas id="internChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<section class="slab" data-tilt>
+  <div class="head">
+    <h2>Recent Issues &amp; Live Status <span class="note" id="dashShown"></span></h2>
+    <input id="dashQuickSearch" type="search" class="input-3d" placeholder="Instant filter by Tracker ID, Title, Reporter...">
+  </div>
+  <div class="chips" id="dashChips">
+    <button type="button" class="chip on" data-f="all">All</button>
+    <button type="button" class="chip" data-f="pending">Pending / Open</button>
+    <button type="button" class="chip" data-f="progress">In Progress</button>
+    <button type="button" class="chip" data-f="resolved">Resolved / Closed</button>
+  </div>
+  <div class="tablewrap">
+    <table class="table-3d">
+      <thead>
+        <tr>
+          <th>Tracker ID</th>
+          <th>Issue Title</th>
+          <th>Reported By</th>
+          <th>Category</th>
+          <th>Priority</th>
+          <th>Assigned Intern</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="dashRecentBody"><tr><td colspan="8" class="empty">Loading live issues from Google Sheets...</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="assets/js/gsheet-api.js"></script>
+  <script src="assets/js/shell.js"></script>
+  <script src="assets/js/reactive3d.js?v=17"></script>
+  <script src="assets/js/app.js?v=17"></script>
+  <script>
+
+const user = initStationaryShell("dashboard.html", "Dashboard");
+const isAdmin = user.role === "admin";
+document.getElementById("dashHeading").textContent = isAdmin ? "Admin Dashboard" : "Intern Dashboard";
+document.getElementById("kpiTotalLabel").textContent = isAdmin ? "Total Issues" : "My Assigned Total";
+if (isAdmin) {
+  document.getElementById("dashExportBtn").classList.remove("d-none");
+} else {
+  document.querySelectorAll(".admin-only-filter, .admin-only-chart").forEach(el => el.classList.add("d-none"));
+}
+
+let db = null;
+
+async function loadDashboard() {
+  db = await GSheetDB.get({ action: "bundle" });
+  renderNotifications(db.notifications, user.id);
+
+  const catSel = document.getElementById("fCat");
+  (db.categories || []).forEach(c => catSel.insertAdjacentHTML("beforeend", `<option value="${c.id}">${e(c.name)}</option>`));
+  const deptSel = document.getElementById("fDept");
+  (db.departments || []).forEach(d => deptSel.insertAdjacentHTML("beforeend", `<option value="${d.id}">${e(d.name)}</option>`));
+  const intSel = document.getElementById("fIntern");
+  (db.users || []).filter(u => u.role === "intern").forEach(u => intSel.insertAdjacentHTML("beforeend", `<option value="${u.id}">${e(u.full_name)}</option>`));
+
+  computeAndRender();
+}
+
+function computeAndRender() {
+  const from = document.getElementById("fFrom").value;
+  const to = document.getElementById("fTo").value;
+  const catId = document.getElementById("fCat").value;
+  const deptId = document.getElementById("fDept").value;
+  const internId = document.getElementById("fIntern").value;
+
+  let list = (db.issues || []).filter(i => {
+    if (!isAdmin && String(i.assigned_intern_id) !== String(user.id)) return false;
+    const dStr = String(i.created_at || "").slice(0, 10);
+    if (from && dStr < from) return false;
+    if (to && dStr > to) return false;
+    if (catId !== "0" && String(i.category_id) !== catId) return false;
+    if (isAdmin && deptId !== "0" && String(i.department_id) !== deptId) return false;
+    if (isAdmin && internId !== "0" && String(i.assigned_intern_id) !== internId) return false;
+    return true;
+  });
+
+  const nowMs = Date.now();
+  const total = list.length;
+  const newCnt = list.filter(i => i.status === "Submitted").length;
+  const assignedCnt = list.filter(i => i.status === "Assigned").length;
+  const progCnt = list.filter(i => i.status === "In Progress").length;
+  const resolvedCnt = list.filter(i => i.status === "Resolved").length;
+  const closedCnt = list.filter(i => i.status === "Closed").length;
+  const reopenedCnt = list.filter(i => i.status === "Reopened").length;
+  const solved = resolvedCnt + closedCnt;
+  const pct = total ? Math.round((solved / total) * 1000) / 10 : 0;
+  const overdue = list.filter(i => !["Resolved", "Closed"].includes(i.status) && i.sla_due_at && new Date(i.sla_due_at).getTime() < nowMs).length;
+
+  const resolvedWithTime = list.filter(i => i.resolved_at && i.created_at);
+  const avgHrs = resolvedWithTime.length
+    ? (resolvedWithTime.reduce((acc, i) => acc + Math.max(0, (new Date(i.resolved_at) - new Date(i.created_at)) / 3600000), 0) / resolvedWithTime.length).toFixed(1)
+    : "0";
+
+  document.getElementById("kpiTotal").textContent = total;
+  document.getElementById("kpiProg").textContent = progCnt + assignedCnt;
+  document.getElementById("kpiSolved").textContent = solved;
+  document.getElementById("kpiPct").textContent = `(${pct}%)`;
+  document.getElementById("kpiBar").style.width = pct + "%";
+  document.getElementById("kpiOverdue").textContent = overdue;
+  document.getElementById("kpiPending").textContent = newCnt + reopenedCnt + list.filter(i => i.status === "Waiting for Info").length;
+  document.getElementById("kpiNew").textContent = newCnt;
+  document.getElementById("kpiAssigned").textContent = assignedCnt;
+  document.getElementById("kpiResolved").textContent = resolvedCnt;
+  document.getElementById("kpiReopened").textContent = reopenedCnt;
+  document.getElementById("kpiAvgHrs").textContent = avgHrs + "h";
+
+  const catMap = Object.fromEntries((db.categories || []).map(c => [String(c.id), c.name]));
+  const userMap = Object.fromEntries((db.users || []).map(u => [String(u.id), u.full_name]));
+  const deptMap = Object.fromEntries((db.departments || []).map(d => [String(d.id), d.name]));
+
+  const recent = list.slice(-15).reverse();
+  const tbody = document.getElementById("dashRecentBody");
+  tbody.innerHTML = recent.length ? recent.map(r => {
+    const st = r.status;
+    const rowCls = ["Resolved", "Closed"].includes(st) ? "match" : (st === "Reopened" ? "nomatch" : "");
+    const grp = ["Resolved", "Closed"].includes(st) ? "resolved" : (st === "In Progress" ? "progress" : "pending");
+    return `
+      <tr class="${rowCls}" data-group="${grp}">
+        <td class="fw-bold text-info">${e(r.tracker_id)}</td>
+        <td>${e(r.title)}</td>
+        <td>${e(r.reported_by_name)}</td>
+        <td><span class="tag-pill tag-purple">${e(catMap[String(r.category_id)] || "General")}</span></td>
+        <td>${getPriorityBadge(r.priority)}</td>
+        <td>${r.assigned_intern_id ? e(userMap[String(r.assigned_intern_id)] || "Intern") : '<span style="color:var(--mute);">Unassigned</span>'}</td>
+        <td>${getStatusBadge(st)}</td>
+        <td><a href="issue_view.html?id=${r.id}" class="btn-3d py-1 px-3 text-decoration-none">Open</a></td>
+      </tr>
+    `;
+  }).join("") : `<tr><td colspan="8" class="empty">No issues recorded in Google Sheets yet. <a href="submit_issue.html" class="text-info fw-bold">Log the first issue now</a>.</td></tr>`;
+
+  // Destroy existing Chart.js canvases before redrawing on filter change
+  ["monthlyChart","dailyChart","statusChart","priorityChart","categoryChart","deptChart","internChart"].forEach(cid => {
+    const ch = Chart.getChart(cid);
+    if (ch) ch.destroy();
+  });
+
+  const groupBy = (arr, fn) => {
+    const m = {};
+    arr.forEach(x => { const k = fn(x); m[k] = (m[k] || 0) + 1; });
+    return Object.entries(m).map(([label, val]) => ({ label, val }));
+  };
+
+  const interns = (db.users || []).filter(u => u.role === "intern");
+  window.DASHBOARD_CHARTS = {
+    status: groupBy(list, x => x.status),
+    priority: groupBy(list, x => x.priority),
+    category: groupBy(list, x => catMap[String(x.category_id)] || "Other"),
+    monthly: groupBy(list, x => String(x.created_at || "").slice(0, 7)).sort((a, b) => a.label.localeCompare(b.label)),
+    daily: groupBy(list, x => String(x.created_at || "").slice(0, 10)).sort((a, b) => a.label.localeCompare(b.label)).slice(-14),
+    dept: groupBy(list, x => deptMap[String(x.department_id)] || "General"),
+    intern: interns.map(u => {
+      const mine = list.filter(i => String(i.assigned_intern_id) === String(u.id));
+      return {
+        label: u.full_name,
+        total_assigned: mine.length,
+        resolved_cnt: mine.filter(i => ["Resolved", "Closed"].includes(i.status)).length
+      };
+    })
+  };
+  if (window.renderDashboardCharts) window.renderDashboardCharts();
+}
+
+document.getElementById("applyDashFilter").addEventListener("click", computeAndRender);
+document.getElementById("resetDashFilter").addEventListener("click", () => {
+  ["fFrom", "fTo"].forEach(id => document.getElementById(id).value = "");
+  ["fCat", "fDept", "fIntern"].forEach(id => document.getElementById(id).value = "0");
+  computeAndRender();
+});
+
+loadDashboard();
+
+  </script>
+</body>
+</html>

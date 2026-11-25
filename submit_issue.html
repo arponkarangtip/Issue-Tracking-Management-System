@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b132b">
+  <title>Issue Tracking &amp; Management System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="assets/css/style.css?v=17" rel="stylesheet">
+</head>
+<body>
+  <main class="main-scroll-area" id="mainScrollArea">
+    <div class="main-inner-container">
+
+<div class="hero-header mb-4">
+  <h1>Log / Submit Technical Issue</h1>
+  <p>Record a reported beneficiary or operational issue and assign it to any active Intern.</p>
+</div>
+
+<section class="slab" data-tilt>
+  <form id="submitIssueForm">
+    <div class="row g-3 p-3 rounded-3 mb-4" style="background:var(--indigo-50);border:1px solid var(--edge);">
+      <div class="col-6 col-md-3">
+        <label class="small d-block mb-1" style="color:var(--mute);">Auto Tracker ID</label>
+        <input type="text" id="previewTracker" class="input-3d w-100 fw-bold text-info" value="AUTO-GENERATED" readonly>
+      </div>
+      <div class="col-6 col-md-3">
+        <label class="small d-block mb-1" style="color:var(--mute);">Logged By Staff</label>
+        <input type="text" id="loggedStaffName" class="input-3d w-100" readonly>
+      </div>
+      <div class="col-6 col-md-3">
+        <label class="small d-block mb-1" style="color:var(--mute);">Staff ID &amp; Role</label>
+        <input type="text" id="loggedStaffRole" class="input-3d w-100 text-uppercase" readonly>
+      </div>
+      <div class="col-6 col-md-3">
+        <label class="small d-block mb-1" style="color:var(--mute);">Timestamp</label>
+        <input type="text" id="loggedTimestamp" class="input-3d w-100" readonly>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-12 col-md-6">
+        <label class="form-label fw-bold small text-info">Reported By ( UserID / Applicant / Field Officer Name ) *</label>
+        <input type="text" id="repName" class="input-3d w-100" required placeholder="Full name of person reporting the issue">
+      </div>
+      <div class="col-12 col-md-6">
+        <label class="form-label fw-bold small text-info">Reporter Mobile / NID Reference</label>
+        <input type="text" id="repContact" class="input-3d w-100" placeholder="017XXXXXXXX or 10/17-digit NID">
+      </div>
+
+      <div class="col-12 col-sm-6 col-lg-3">
+        <label class="form-label fw-bold small text-info">Department *</label>
+        <select id="deptId" class="input-3d w-100" required></select>
+      </div>
+      <div class="col-12 col-sm-6 col-lg-3">
+        <label class="form-label fw-bold small text-info">Issue Category *</label>
+        <select id="catId" class="input-3d w-100" required></select>
+      </div>
+      <div class="col-12 col-sm-6 col-lg-3">
+        <label class="form-label fw-bold small text-info">Priority Level *</label>
+        <select id="priority" class="input-3d w-100" required>
+          <option value="Low">Low</option>
+          <option value="Medium" selected>Medium</option>
+          <option value="High">High</option>
+          <option value="Critical">Critical</option>
+        </select>
+      </div>
+      <div class="col-12 col-sm-6 col-lg-3">
+        <label class="form-label fw-bold small text-info">Assign To Intern *</label>
+        <select id="assignInternId" class="input-3d w-100"></select>
+      </div>
+
+      <div class="col-12">
+        <label class="form-label fw-bold small text-info">Issue Title *</label>
+        <input type="text" id="title" class="input-3d w-100" required maxlength="250" placeholder="e.g., Mobile number OTP mismatch or Payment account update">
+      </div>
+
+      <div class="col-12">
+        <label class="form-label fw-bold small text-info">Problem Description *</label>
+        <textarea id="description" class="input-3d w-100" rows="4" required placeholder="Describe exact steps, error messages, and affected record details..."></textarea>
+      </div>
+
+      <div class="col-12">
+        <label class="form-label fw-bold small text-info">Additional Information ( Email, Baby Reg No, Area Code, Account No, etc. )</label>
+        <textarea id="additionalInfo" class="input-3d w-100" rows="2" placeholder="Optional reference identifiers..."></textarea>
+      </div>
+
+      <div class="col-12 mt-3">
+        <div class="controls">
+          <label class="drop" id="dropScreenshot">
+            <b>1. Screenshot Upload (Optional)</b>
+            <small>Error prompt or screen capture &middot; .png .jpg .jpeg .webp (Max 35KB)</small>
+            <span class="fn" id="fnScreenshot">Click or drop a screenshot file</span>
+            <input type="file" id="inputScreenshot" accept=".png,.jpg,.jpeg,.webp">
+          </label>
+          <label class="drop" id="dropDocument">
+            <b>2. Supporting Document Upload (Optional)</b>
+            <small>Application, NID copy, or bank slip &middot; .pdf .doc .docx (Max 35KB)</small>
+            <span class="fn" id="fnDocument">Click or drop a document file</span>
+            <input type="file" id="inputDocument" accept=".pdf,.doc,.docx">
+          </label>
+        </div>
+      </div>
+
+      <div class="col-12 pt-3 d-flex flex-column flex-sm-row justify-content-end gap-2">
+        <a href="dashboard.html" class="btn-3d alt text-decoration-none">Cancel</a>
+        <button type="submit" id="saveIssueBtn" class="btn-3d">
+          <i class="bi bi-send-check me-1"></i> Save &amp; Assign Issue
+        </button>
+      </div>
+    </div>
+  </form>
+</section>
+
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="assets/js/gsheet-api.js"></script>
+  <script src="assets/js/shell.js"></script>
+  <script src="assets/js/reactive3d.js?v=17"></script>
+  <script src="assets/js/app.js?v=17"></script>
+  <script>
+
+const user = initStationaryShell("submit_issue.html", "Log / Submit Issue");
+document.getElementById("loggedStaffName").value = user.full_name;
+document.getElementById("loggedStaffRole").value = `${user.employee_code} (${user.role})`;
+document.getElementById("loggedTimestamp").value = new Date().toISOString().replace("T", " ").slice(0, 19);
+
+let db = null;
+
+async function initSubmitForm() {
+  db = await GSheetDB.get({ action: "bundle" });
+  renderNotifications(db.notifications, user.id);
+
+  const deptSel = document.getElementById("deptId");
+  deptSel.innerHTML = '<option value="">Select Department...</option>' +
+    (db.departments || []).map(d => `<option value="${d.id}" ${String(d.id) === String(user.department_id) ? "selected" : ""}>${e(d.name)}</option>`).join("");
+
+  const catSel = document.getElementById("catId");
+  catSel.innerHTML = '<option value="">Select Category...</option>' +
+    (db.categories || []).filter(c => String(c.is_active) !== "0").map(c => `<option value="${c.id}">${e(c.name)}</option>`).join("");
+
+  const interns = (db.users || []).filter(u => u.role === "intern" && u.status === "active");
+  const intSel = document.getElementById("assignInternId");
+  intSel.innerHTML = (user.role === "admin" ? '<option value="0">-- Leave Unassigned --</option>' : "") +
+    interns.map(u => `<option value="${u.id}" ${String(u.id) === String(user.id) ? "selected" : ""}>${e(u.full_name)} (${e(u.employee_code)})${String(u.id) === String(user.id) ? " — You" : ""}</option>`).join("");
+}
+
+function readB64(file) {
+  return new Promise((res, rej) => {
+    if (!file) return res(null);
+    if (file.size > 40000) return rej(new Error("File must be under 40KB for Google Sheet cell storage."));
+    const r = new FileReader();
+    r.onload = () => res({ name: file.name, type: file.type, size: file.size, data: r.result });
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+document.getElementById("submitIssueForm").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const btn = document.getElementById("saveIssueBtn");
+  btn.disabled = true;
+  btn.textContent = "Saving to Google Sheet...";
+
+  try {
+    const prio = document.getElementById("priority").value;
+    const slaRule = (db.sla_settings || []).find(s => s.priority === prio) || { resolution_hours: 24 };
+    const slaDue = new Date(Date.now() + Number(slaRule.resolution_hours) * 3600000).toISOString();
+    const internVal = document.getElementById("assignInternId").value;
+    const assignId = internVal && internVal !== "0" ? internVal : "";
+    const initStatus = assignId ? "Assigned" : "Submitted";
+
+    const scr = await readB64(document.getElementById("inputScreenshot").files[0]);
+    const doc = await readB64(document.getElementById("inputDocument").files[0]);
+
+    const res = await GSheetDB.post({
+      action: "insert",
+      sheet: "issues",
+      data: {
+        reported_by_name: document.getElementById("repName").value.trim(),
+        reported_by_contact: document.getElementById("repContact").value.trim(),
+        created_by_staff_id: user.id,
+        department_id: document.getElementById("deptId").value,
+        category_id: document.getElementById("catId").value,
+        assigned_intern_id: assignId,
+        title: document.getElementById("title").value.trim(),
+        description: document.getElementById("description").value.trim(),
+        additional_info: document.getElementById("additionalInfo").value.trim(),
+        priority: prio,
+        status: initStatus,
+        sla_due_at: slaDue
+      }
+    });
+
+    const issue = res.data;
+    if (assignId) {
+      await GSheetDB.post({
+        action: "insert",
+        sheet: "issue_assignments",
+        data: { issue_id: issue.id, intern_id: assignId, assigned_by: user.id, notes: `Assigned during creation by ${user.full_name}` }
+      });
+      if (String(assignId) !== String(user.id)) {
+        await GSheetDB.post({
+          action: "insert",
+          sheet: "notifications",
+          data: { user_id: assignId, issue_id: issue.id, title: `New Issue Assigned: ${issue.tracker_id}`, message: `${user.full_name} assigned '${issue.title}' to you.`, type: "info", is_read: 0 }
+        });
+      }
+    }
+
+    for (const [att, kind] of [[scr, "screenshot"], [doc, "document"]]) {
+      if (att) {
+        await GSheetDB.post({
+          action: "insert",
+          sheet: "issue_attachments",
+          data: { issue_id: issue.id, uploaded_by: user.id, attachment_type: kind, original_name: att.name, stored_path: att.data, mime_type: att.type, file_size: att.size }
+        });
+      }
+    }
+
+    await GSheetDB.post({
+      action: "insert",
+      sheet: "issue_history",
+      data: { issue_id: issue.id, changed_by: user.id, previous_status: "", new_status: initStatus, remarks: `Logged by ${user.full_name} (${user.role})` }
+    });
+
+    window.location.href = `issue_view.html?id=${issue.id}&created=1`;
+  } catch (err) {
+    window.showToast(err.message);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-send-check me-1"></i> Save &amp; Assign Issue';
+  }
+});
+
+initSubmitForm();
+
+  </script>
+</body>
+</html>

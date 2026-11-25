@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b132b">
+  <title>Issue Tracking &amp; Management System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="assets/css/style.css?v=17" rel="stylesheet">
+</head>
+<body>
+  <main class="main-scroll-area" id="mainScrollArea">
+    <div class="main-inner-container">
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+<div class="hero-header d-flex flex-wrap justify-content-between align-items-end mb-4 gap-2">
+  <div>
+    <h1>Analytical Reports &amp; Export</h1>
+    <p>Generate live Google Sheets reports and export as Excel, PDF, CSV, or Executive Summary</p>
+  </div>
+
+  <!-- Clean 3D Export Dropdown Menu (Exact Match to Original reports.php) -->
+  <div class="dropdown">
+    <button class="btn-3d purple dropdown-toggle px-4" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-download me-2"></i> Export / Download Report
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end slab p-2" style="min-width: 275px; z-index: 1080;">
+      <li><div class="px-3 py-1 small fw-bold text-uppercase" style="color:var(--mute);font-size:0.7rem;">Current Table Export</div></li>
+      <li>
+        <button type="button" id="expExcelBtn" class="dropdown-item rounded py-2 d-flex align-items-center gap-2">
+          <i class="bi bi-file-earmark-excel-fill text-success fs-5"></i>
+          <div>
+            <div class="fw-bold small">Download Excel (.xlsx)</div>
+            <small style="color:var(--mute);font-size:0.72rem;">Export filtered table to Excel</small>
+          </div>
+        </button>
+      </li>
+      <li>
+        <button type="button" id="expPdfBtn" class="dropdown-item rounded py-2 d-flex align-items-center gap-2">
+          <i class="bi bi-file-earmark-pdf-fill text-danger fs-5"></i>
+          <div>
+            <div class="fw-bold small">Download PDF (.pdf)</div>
+            <small style="color:var(--mute);font-size:0.72rem;">Direct PDF report download</small>
+          </div>
+        </button>
+      </li>
+      <li>
+        <button type="button" id="expCsvBtn" class="dropdown-item rounded py-2 d-flex align-items-center gap-2">
+          <i class="bi bi-filetype-csv text-info fs-5"></i>
+          <div>
+            <div class="fw-bold small">Download CSV (.csv)</div>
+            <small style="color:var(--mute);font-size:0.72rem;">Comma-separated raw data</small>
+          </div>
+        </button>
+      </li>
+      <li><hr class="dropdown-divider my-2" style="border-color:var(--edge);"></li>
+      <li><div class="px-3 py-1 small fw-bold text-uppercase" style="color:var(--mute);font-size:0.7rem;">Executive Summary (All Depts &amp; Cats)</div></li>
+      <li>
+        <button type="button" id="expSummaryExcelBtn" class="dropdown-item rounded py-2 d-flex align-items-center gap-2">
+          <i class="bi bi-file-earmark-spreadsheet-fill text-warning fs-5"></i>
+          <div>
+            <div class="fw-bold small">Download Summary (Excel)</div>
+            <small style="color:var(--mute);font-size:0.72rem;">All depts, categories &amp; interns</small>
+          </div>
+        </button>
+      </li>
+      <li>
+        <button type="button" id="expSummaryPdfBtn" class="dropdown-item rounded py-2 d-flex align-items-center gap-2">
+          <i class="bi bi-file-earmark-richtext-fill text-info fs-5"></i>
+          <div>
+            <div class="fw-bold small">Download Summary (PDF)</div>
+            <small style="color:var(--mute);font-size:0.72rem;">Multi-section Executive PDF report</small>
+          </div>
+        </button>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<section class="slab" data-tilt>
+  <div class="row g-2 align-items-end">
+    <div class="col-12 col-md-4">
+      <label class="small d-block mb-1" style="color:var(--mute);">Report Type</label>
+      <select id="repType" class="input-3d w-100 py-2">
+        <option value="all">All Issues Report</option>
+        <option value="summary">Executive Summary Report (All Depts &amp; Categories)</option>
+        <option value="pending">Pending Issues Report</option>
+        <option value="resolved">Resolved Issues Report</option>
+        <option value="overdue">Overdue Issues Report</option>
+        <option value="monthly">Current Monthly Report</option>
+        <option value="intern">Intern Performance Report</option>
+        <option value="department">Department-wise Report</option>
+        <option value="category">Category-wise Report</option>
+      </select>
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="small d-block mb-1" style="color:var(--mute);">From Date</label>
+      <input type="date" id="repFrom" class="input-3d w-100 py-2">
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="small d-block mb-1" style="color:var(--mute);">To Date</label>
+      <input type="date" id="repTo" class="input-3d w-100 py-2">
+    </div>
+    <div class="col-12 col-md-2">
+      <button type="button" id="genRepBtn" class="btn-3d w-100 py-2">Generate</button>
+    </div>
+  </div>
+</section>
+
+<section class="slab" data-tilt>
+  <div class="tablewrap">
+    <table class="table-3d">
+      <thead id="repHead"></thead>
+      <tbody id="repBody"><tr><td class="empty">Loading report telemetry...</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="assets/js/gsheet-api.js"></script>
+  <script src="assets/js/shell.js"></script>
+  <script src="assets/js/reactive3d.js?v=17"></script>
+  <script src="assets/js/app.js?v=17"></script>
+  <script>
+
+const user = initStationaryShell("reports.html", "Reports & Export");
+let db = null, currentRows = [];
+
+async function loadReports() {
+  db = await GSheetDB.get({ action: "bundle" });
+  renderNotifications(db.notifications, user.id);
+  buildReport();
+}
+
+function getFilteredIssues() {
+  const from = document.getElementById("repFrom").value;
+  const to = document.getElementById("repTo").value;
+  return (db.issues || []).filter(i => {
+    const d = String(i.created_at || "").slice(0, 10);
+    if (from && d < from) return false;
+    if (to && d > to) return false;
+    return true;
+  });
+}
+
+function getExecutiveSections() {
+  const issues = getFilteredIssues();
+  const total = issues.length;
+  const solved = issues.filter(i => ["Resolved", "Closed"].includes(i.status)).length;
+  const overdue = issues.filter(i => !["Resolved", "Closed"].includes(i.status) && i.sla_due_at && new Date(i.sla_due_at).getTime() < Date.now()).length;
+  const rate = total ? ((solved / total) * 100).toFixed(1) + "%" : "0%";
+
+  const kpiSection = [{
+    Total_Issues: total,
+    Resolved_Closed: solved,
+    Resolution_Rate: rate,
+    Pending_Active: total - solved,
+    Overdue_SLA: overdue
+  }];
+
+  const deptSection = (db.departments || []).map(d => {
+    const m = issues.filter(i => String(i.department_id) === String(d.id));
+    const s = m.filter(i => ["Resolved", "Closed"].includes(i.status)).length;
+    const o = m.filter(i => !["Resolved", "Closed"].includes(i.status) && i.sla_due_at && new Date(i.sla_due_at).getTime() < Date.now()).length;
+    return { Code: d.code, Department: d.name, Total: m.length, Resolved_Closed: s, Pending: m.length - s, Overdue: o };
+  });
+
+  const catSection = (db.categories || []).map(c => {
+    const m = issues.filter(i => String(i.category_id) === String(c.id));
+    const s = m.filter(i => ["Resolved", "Closed"].includes(i.status)).length;
+    const o = m.filter(i => !["Resolved", "Closed"].includes(i.status) && i.sla_due_at && new Date(i.sla_due_at).getTime() < Date.now()).length;
+    return { Category: c.name, Total: m.length, Resolved_Closed: s, Pending: m.length - s, Overdue: o };
+  });
+
+  const prioSection = ["Critical", "High", "Medium", "Low"].map(p => {
+    const m = issues.filter(i => i.priority === p);
+    const s = m.filter(i => ["Resolved", "Closed"].includes(i.status)).length;
+    return { Priority: p, Total: m.length, Resolved_Closed: s, Pending: m.length - s };
+  });
+
+  const internSection = (db.users || []).filter(u => u.role === "intern").map(u => {
+    const m = issues.filter(i => String(i.assigned_intern_id) === String(u.id));
+    const s = m.filter(i => ["Resolved", "Closed"].includes(i.status)).length;
+    return { Staff_Code: u.employee_code, Intern_Name: u.full_name, Total_Assigned: m.length, Resolved_Closed: s, Pending: m.length - s };
+  });
+
+  return { kpiSection, deptSection, catSection, prioSection, internSection };
+}
+
+function buildReport() {
+  const type = document.getElementById("repType").value;
+  const catMap = Object.fromEntries((db.categories || []).map(c => [String(c.id), c.name]));
+  const deptMap = Object.fromEntries((db.departments || []).map(d => [String(d.id), d.name]));
+  const userMap = Object.fromEntries((db.users || []).map(u => [String(u.id), u.full_name]));
+
+  let issues = getFilteredIssues();
+  const ymNow = new Date().toISOString().slice(0, 7);
+
+  if (type === "pending") issues = issues.filter(i => !["Resolved", "Closed"].includes(i.status));
+  if (type === "resolved") issues = issues.filter(i => ["Resolved", "Closed"].includes(i.status));
+  if (type === "overdue") issues = issues.filter(i => !["Resolved", "Closed"].includes(i.status) && i.sla_due_at && new Date(i.sla_due_at).getTime() < Date.now());
+  if (type === "monthly") issues = issues.filter(i => String(i.created_at || "").startsWith(ymNow));
+
+  if (type === "summary") {
+    const ex = getExecutiveSections();
+    currentRows = [
+      ...ex.deptSection.map(d => ({ Section: "DEPARTMENT", Item_Name: d.Department, Total_Issues: d.Total, Resolved_Closed: d.Resolved_Closed, Pending_Open: d.Pending })),
+      ...ex.catSection.map(c => ({ Section: "CATEGORY", Item_Name: c.Category, Total_Issues: c.Total, Resolved_Closed: c.Resolved_Closed, Pending_Open: c.Pending })),
+      ...ex.internSection.map(i => ({ Section: "INTERN", Item_Name: i.Intern_Name, Total_Issues: i.Total_Assigned, Resolved_Closed: i.Resolved_Closed, Pending_Open: i.Pending }))
+    ];
+  } else if (type === "intern") {
+    currentRows = (db.users || []).filter(u => u.role === "intern").map(u => {
+      const mine = issues.filter(i => String(i.assigned_intern_id) === String(u.id));
+      const res = mine.filter(i => ["Resolved", "Closed"].includes(i.status)).length;
+      return { Intern_Code: u.employee_code, Intern_Name: u.full_name, Total_Assigned: mine.length, Resolved: res, Pending: mine.length - res };
+    });
+  } else if (type === "department") {
+    currentRows = (db.departments || []).map(d => {
+      const m = issues.filter(i => String(i.department_id) === String(d.id));
+      return { Code: d.code, Department: d.name, Total_Issues: m.length, Resolved: m.filter(i => ["Resolved", "Closed"].includes(i.status)).length };
+    });
+  } else if (type === "category") {
+    currentRows = (db.categories || []).map(c => {
+      const m = issues.filter(i => String(i.category_id) === String(c.id));
+      return { Category: c.name, Total_Issues: m.length, Resolved: m.filter(i => ["Resolved", "Closed"].includes(i.status)).length };
+    });
+  } else {
+    currentRows = issues.map(i => ({
+      Tracker_ID: i.tracker_id,
+      Title: i.title,
+      Reported_By: i.reported_by_name,
+      Department: deptMap[String(i.department_id)] || "-",
+      Category: catMap[String(i.category_id)] || "-",
+      Priority: i.priority,
+      Assigned_Intern: userMap[String(i.assigned_intern_id)] || "Unassigned",
+      Status: i.status,
+      Created_At: String(i.created_at || "").slice(0, 19)
+    }));
+  }
+
+  const head = document.getElementById("repHead");
+  const body = document.getElementById("repBody");
+  if (!currentRows.length) {
+    head.innerHTML = "";
+    body.innerHTML = '<tr><td class="empty">No records match the selected report criteria.</td></tr>';
+    return;
+  }
+  const cols = Object.keys(currentRows[0]);
+  head.innerHTML = "<tr>" + cols.map(c => `<th>${e(c.replace(/_/g, " "))}</th>`).join("") + "</tr>";
+  body.innerHTML = currentRows.map(r => "<tr>" + cols.map(c => `<td class="${c === 'Section' ? 'fw-bold text-info' : ''}">${e(r[c])}</td>`).join("") + "</tr>").join("");
+}
+
+document.getElementById("genRepBtn").addEventListener("click", buildReport);
+document.getElementById("repType").addEventListener("change", buildReport);
+
+// 1. Current Table -> Excel (.xlsx)
+document.getElementById("expExcelBtn").addEventListener("click", () => {
+  if (!currentRows.length) return window.showToast("No records available to export");
+  const type = document.getElementById("repType").value;
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(currentRows), type.toUpperCase());
+  XLSX.writeFile(wb, `issue_report_${type}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  window.showToast("Excel (.xlsx) report downloaded");
+});
+
+// 2. Current Table -> PDF (.pdf)
+document.getElementById("expPdfBtn").addEventListener("click", () => {
+  if (!currentRows.length) return window.showToast("No records available to export");
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+  const type = document.getElementById("repType").value.toUpperCase();
+  const orgSetting = (db.system_settings || []).find(s => s.setting_key === "org_name");
+  const orgName = orgSetting ? orgSetting.setting_value : "Enterprise Operations Directorate";
+
+  doc.setFontSize(15);
+  doc.setTextColor(30, 27, 75);
+  doc.text(`${orgName} — ${type} REPORT`, 40, 38);
+  doc.setFontSize(9);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Generated: ${new Date().toLocaleString()} | Exported by: ${user.full_name}`, 40, 54);
+
+  const cols = Object.keys(currentRows[0]);
+  doc.autoTable({
+    startY: 66,
+    head: [cols.map(c => c.replace(/_/g, " "))],
+    body: currentRows.map(r => cols.map(c => String(r[c] ?? ""))),
+    styles: { fontSize: 8, cellPadding: 4 },
+    headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255] },
+    alternateRowStyles: { fillColor: [248, 250, 252] }
+  });
+
+  doc.save(`issue_report_${type.toLowerCase()}_${new Date().toISOString().slice(0,10)}.pdf`);
+  window.showToast("PDF report downloaded");
+});
+
+// 3. Current Table -> CSV (.csv)
+document.getElementById("expCsvBtn").addEventListener("click", () => {
+  if (!currentRows.length) return window.showToast("No records available to export");
+  const type = document.getElementById("repType").value;
+  const cols = Object.keys(currentRows[0]);
+  const csv = [cols.join(","), ...currentRows.map(r => cols.map(c => `"${String(r[c] ?? "").replace(/"/g, '""')}"`).join(","))].join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `issue_report_${type}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  window.showToast("CSV report downloaded");
+});
+
+// 4. Executive Summary -> Multi-sheet Excel (.xlsx)
+document.getElementById("expSummaryExcelBtn").addEventListener("click", () => {
+  const ex = getExecutiveSections();
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ex.kpiSection), "1_Overall_KPIs");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ex.deptSection), "2_Departments");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ex.catSection), "3_Categories");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ex.prioSection), "4_Priorities");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ex.internSection), "5_Intern_Performance");
+  XLSX.writeFile(wb, `Executive_Summary_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
+  window.showToast("Executive Summary Excel downloaded");
+});
+
+// 5. Executive Summary -> Multi-section PDF (.pdf)
+document.getElementById("expSummaryPdfBtn").addEventListener("click", () => {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+  const ex = getExecutiveSections();
+  const orgSetting = (db.system_settings || []).find(s => s.setting_key === "org_name");
+  const orgName = orgSetting ? orgSetting.setting_value : "Enterprise Operations Directorate";
+
+  doc.setFontSize(15);
+  doc.setTextColor(15, 37, 68);
+  doc.text(`${orgName}`, 40, 38);
+  doc.setFontSize(11);
+  doc.setTextColor(79, 70, 229);
+  doc.text("EXECUTIVE ISSUE SUMMARY REPORT", 40, 54);
+  doc.setFontSize(8.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Generated: ${new Date().toLocaleString()} | Prepared by: ${user.full_name}`, 40, 68);
+
+  const addSection = (title, rows, startY) => {
+    doc.setFontSize(10);
+    doc.setTextColor(30, 41, 59);
+    doc.text(title, 40, startY);
+    const cols = rows.length ? Object.keys(rows[0]) : ["Info"];
+    const body = rows.length ? rows.map(r => cols.map(c => String(r[c] ?? ""))) : [["No data"]];
+    doc.autoTable({
+      startY: startY + 6,
+      head: [cols.map(c => c.replace(/_/g, " "))],
+      body,
+      styles: { fontSize: 8, cellPadding: 4 },
+      headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255] },
+      alternateRowStyles: { fillColor: [248, 250, 252] }
+    });
+    return doc.lastAutoTable.finalY + 18;
+  };
+
+  let y = 88;
+  y = addSection("1. OVERALL SYSTEM SUMMARY", ex.kpiSection, y);
+  y = addSection("2. DEPARTMENT-WISE SUMMARY", ex.deptSection, y);
+  y = addSection("3. CATEGORY-WISE SUMMARY", ex.catSection, y);
+  y = addSection("4. PRIORITY-WISE SUMMARY", ex.prioSection, y);
+  addSection("5. INTERN WORKLOAD & RESOLUTION SUMMARY", ex.internSection, y);
+
+  doc.save(`Executive_Summary_Report_${new Date().toISOString().slice(0,10)}.pdf`);
+  window.showToast("Executive Summary PDF downloaded");
+});
+
+loadReports();
+
+  </script>
+</body>
+</html>

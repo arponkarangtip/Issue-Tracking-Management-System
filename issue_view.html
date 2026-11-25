@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b132b">
+  <title>Issue Tracking &amp; Management System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="assets/css/style.css?v=17" rel="stylesheet">
+</head>
+<body>
+  <main class="main-scroll-area" id="mainScrollArea">
+    <div class="main-inner-container">
+
+<div class="hero-header d-flex flex-wrap justify-content-between align-items-end mb-4 gap-2">
+  <div>
+    <a href="issues.html" class="text-decoration-none small text-info">&larr; Back to Issue Registry</a>
+    <h1 class="mt-1" id="ivHeader" style="font-size:clamp(20px,3vw,32px);">Loading Issue...</h1>
+  </div>
+  <div class="d-flex align-items-center gap-2" id="ivHeaderBadges"></div>
+</div>
+
+<div class="row g-4">
+  <div class="col-12 col-lg-8">
+    <div class="slab" data-tilt>
+      <h2 class="h6 fw-bold text-info mb-3">Problem Specification</h2>
+      <div class="row g-2 small mb-3 p-3 rounded" id="ivMetaGrid" style="background:var(--indigo-50);border:1px solid var(--edge);"></div>
+      <div class="small text-uppercase fw-bold mb-1" style="color:var(--mute);">Description</div>
+      <p class="mb-3" id="ivDesc" style="white-space: pre-line;"></p>
+      <div id="ivAddInfoWrap" class="d-none">
+        <div class="small text-uppercase fw-bold mb-1" style="color:var(--mute);">Additional Information</div>
+        <div class="p-2 rounded small mb-3" id="ivAddInfo" style="background:var(--indigo-50);border:1px solid var(--edge);white-space:pre-line;"></div>
+      </div>
+      <div id="ivResWrap" class="p-3 rounded mb-0 d-none" style="background:#ecfdf5;border:1px solid #10b981;">
+        <h6 class="fw-bold text-success mb-1"><i class="bi bi-check-circle-fill me-1"></i>Official Resolution Details</h6>
+        <p class="mb-0 small" id="ivResText" style="white-space: pre-line;"></p>
+      </div>
+    </div>
+
+    <div class="slab" data-tilt>
+      <h2 class="h6 fw-bold text-info mb-3">Attachments &amp; Evidence</h2>
+      <div id="ivAttachments" class="row g-2"></div>
+    </div>
+
+    <div class="slab" data-tilt>
+      <h2 class="h6 fw-bold text-info mb-3">Admin &amp; Intern Communication Log</h2>
+      <div id="ivComments" class="d-flex flex-column gap-3 mb-4"></div>
+      <form id="replyForm" class="border-top pt-3" style="border-color:var(--edge)!important;">
+        <div class="mb-2">
+          <label class="form-label small fw-bold text-info">Post Progress Update / Instruction</label>
+          <textarea id="replyMsg" class="input-3d w-100" rows="3" required placeholder="Write progress note, verification feedback, or instructions..."></textarea>
+        </div>
+        <div class="row g-2 align-items-center">
+          <div class="col-12 col-md-5">
+            <input type="file" id="replyFile" class="input-3d w-100 py-1" accept=".png,.jpg,.jpeg,.webp,.pdf,.doc,.docx">
+          </div>
+          <div class="col-12 col-md-4">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="infoReqChk">
+              <label class="form-check-label small" for="infoReqChk">Flag Waiting for Info</label>
+            </div>
+          </div>
+          <div class="col-12 col-md-3 ms-auto text-md-end">
+            <button type="submit" class="btn-3d py-2 px-3 w-100"><i class="bi bi-send me-1"></i> Post Update</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-4">
+    <div class="slab" data-tilt>
+      <h2 class="h6 fw-bold text-info mb-3"><i class="bi bi-person-check-fill me-1"></i>Assign / Reassign to Intern</h2>
+      <form id="assignForm">
+        <label class="form-label small fw-bold">Select Active Intern</label>
+        <select id="assignSelect" class="input-3d w-100 py-2 mb-2" required></select>
+        <input type="text" id="assignNote" class="input-3d w-100 py-2 mb-2" placeholder="Handover or assignment note...">
+        <button type="submit" class="btn-3d purple w-100 py-2"><i class="bi bi-arrow-left-right me-1"></i> Assign / Transfer Intern</button>
+      </form>
+    </div>
+
+    <div class="slab admin-panel d-none" data-tilt>
+      <h2 class="h6 fw-bold text-info mb-3">Admin Status &amp; Priority Override</h2>
+      <form id="adminOverrideForm">
+        <div class="mb-2">
+          <label class="form-label small fw-bold">Status Override</label>
+          <select id="admStatus" class="input-3d w-100 py-2">
+            <option>Submitted</option><option>Assigned</option><option>In Progress</option>
+            <option>Waiting for Info</option><option>Resolved</option><option>Closed</option><option>Reopened</option>
+          </select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label small fw-bold">Priority</label>
+          <select id="admPriority" class="input-3d w-100 py-2">
+            <option>Low</option><option>Medium</option><option>High</option><option>Critical</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-bold">Category</label>
+          <select id="admCat" class="input-3d w-100 py-2"></select>
+        </div>
+        <button type="submit" class="btn-3d alt w-100 py-2">Save Admin Changes</button>
+      </form>
+    </div>
+
+    <div class="slab intern-panel d-none" data-tilt>
+      <h2 class="h6 fw-bold text-info mb-3">Intern Resolution Panel</h2>
+      <form id="internResForm">
+        <div class="mb-2">
+          <label class="form-label small fw-bold">Update Assignment Status</label>
+          <select id="intStatus" class="input-3d w-100 py-2" required>
+            <option value="In Progress">In Progress</option>
+            <option value="Waiting for Info">Waiting for Info</option>
+            <option value="Resolved">Resolved</option>
+          </select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label small fw-bold">Resolution Details (Required for Resolved)</label>
+          <textarea id="intResDetails" class="input-3d w-100" rows="3" placeholder="Document root cause and fix applied..."></textarea>
+        </div>
+        <button type="submit" class="btn-3d ok w-100 py-2">Update Workflow &amp; Resolution</button>
+      </form>
+    </div>
+
+    <div class="slab" data-tilt>
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h6 fw-bold text-warning mb-0"><i class="bi bi-shield-lock me-1"></i>Staff Internal Notes</h2>
+        <span class="tag-pill tag-amber">Staff Only</span>
+      </div>
+      <form id="noteForm" class="mb-3">
+        <textarea id="noteText" class="input-3d w-100 mb-2" rows="2" required placeholder="Add internal technical note..."></textarea>
+        <button type="submit" class="btn-3d warn w-100 py-2">Add Internal Note</button>
+      </form>
+      <div id="notesList" class="d-flex flex-column gap-2" style="max-height:220px;overflow-y:auto;"></div>
+    </div>
+
+    <div class="slab" data-tilt>
+      <h2 class="h6 fw-bold text-info mb-3"><i class="bi bi-clock-history me-1"></i>Complete Issue Timeline</h2>
+      <div id="historyList" class="timeline-list"></div>
+    </div>
+  </div>
+</div>
+
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="assets/js/gsheet-api.js"></script>
+  <script src="assets/js/shell.js"></script>
+  <script src="assets/js/reactive3d.js?v=17"></script>
+  <script src="assets/js/app.js?v=17"></script>
+  <script>
+
+const user = initStationaryShell("issues.html", "Issue Details");
+const isAdmin = user.role === "admin";
+document.querySelector(isAdmin ? ".admin-panel" : ".intern-panel").classList.remove("d-none");
+
+const qs = new URLSearchParams(window.location.search);
+const issueId = qs.get("id");
+let db = null, issue = null;
+
+async function loadIssue() {
+  if (!issueId) return window.location.href = "issues.html";
+  db = await GSheetDB.get({ action: "bundle" });
+  renderNotifications(db.notifications, user.id);
+
+  issue = (db.issues || []).find(i => String(i.id) === String(issueId));
+  if (!issue) return window.showToast("Issue not found");
+
+  const catMap = Object.fromEntries((db.categories || []).map(c => [String(c.id), c.name]));
+  const deptMap = Object.fromEntries((db.departments || []).map(d => [String(d.id), d.name]));
+  const userMap = Object.fromEntries((db.users || []).map(u => [String(u.id), u]));
+
+  document.getElementById("ivHeader").innerHTML = `${e(issue.tracker_id)} &mdash; ${e(issue.title)}`;
+  document.getElementById("ivHeaderBadges").innerHTML = `${getPriorityBadge(issue.priority)} ${getStatusBadge(issue.status)}`;
+  document.getElementById("ivDesc").textContent = issue.description;
+
+  const creator = userMap[String(issue.created_by_staff_id)];
+  const assignee = userMap[String(issue.assigned_intern_id)];
+  document.getElementById("ivMetaGrid").innerHTML = `
+    <div class="col-12 col-sm-6 col-md-4"><span style="color:var(--mute);">Reported By:</span> <strong>${e(issue.reported_by_name)}</strong></div>
+    <div class="col-12 col-sm-6 col-md-4"><span style="color:var(--mute);">Contact / NID:</span> <strong>${e(issue.reported_by_contact || "N/A")}</strong></div>
+    <div class="col-12 col-sm-6 col-md-4"><span style="color:var(--mute);">Logged By:</span> <strong>${e(creator ? creator.full_name : "Staff")}</strong></div>
+    <div class="col-12 col-sm-6 col-md-4"><span style="color:var(--mute);">Department:</span> <strong>${e(deptMap[String(issue.department_id)] || "-")}</strong></div>
+    <div class="col-12 col-sm-6 col-md-4"><span style="color:var(--mute);">Category:</span> <strong>${e(catMap[String(issue.category_id)] || "-")}</strong></div>
+    <div class="col-12 col-sm-6 col-md-4"><span style="color:var(--mute);">Assigned Intern:</span> <strong>${e(assignee ? assignee.full_name : "Unassigned")}</strong></div>
+    <div class="col-12 col-sm-6"><span style="color:var(--mute);">Created:</span> ${e(String(issue.created_at).slice(0, 16))}</div>
+    <div class="col-12 col-sm-6"><span style="color:var(--mute);">SLA Due:</span> ${e(String(issue.sla_due_at || "N/A").slice(0, 16))}</div>
+  `;
+
+  if (issue.additional_info) {
+    document.getElementById("ivAddInfoWrap").classList.remove("d-none");
+    document.getElementById("ivAddInfo").textContent = issue.additional_info;
+  }
+  if (issue.resolution_details) {
+    document.getElementById("ivResWrap").classList.remove("d-none");
+    document.getElementById("ivResText").textContent = issue.resolution_details;
+  }
+
+  const interns = (db.users || []).filter(u => u.role === "intern" && u.status === "active");
+  document.getElementById("assignSelect").innerHTML = '<option value="">Choose Intern...</option>' +
+    interns.map(u => `<option value="${u.id}" ${String(u.id) === String(issue.assigned_intern_id) ? "selected" : ""}>${e(u.full_name)} (${e(u.employee_code)})</option>`).join("");
+
+  if (isAdmin) {
+    document.getElementById("admStatus").value = issue.status;
+    document.getElementById("admPriority").value = issue.priority;
+    document.getElementById("admCat").innerHTML = (db.categories || []).map(c => `<option value="${c.id}" ${String(c.id) === String(issue.category_id) ? "selected" : ""}>${e(c.name)}</option>`).join("");
+  } else {
+    document.getElementById("intResDetails").value = issue.resolution_details || "";
+  }
+
+  const atts = (db.attachments || []).filter(a => String(a.issue_id) === String(issueId));
+  document.getElementById("ivAttachments").innerHTML = atts.length ? atts.map(a => `
+    <div class="col-12 col-md-6">
+      <div class="rounded p-2 d-flex justify-content-between align-items-center" style="background:var(--indigo-50);border:1px solid var(--edge);">
+        <div class="overflow-hidden">
+          <div class="small fw-bold text-truncate">${e(a.original_name)}</div>
+          <small class="text-uppercase" style="color:var(--mute);">${e(a.attachment_type)} &bull; ${(Number(a.file_size)/1024).toFixed(1)} KB</small>
+        </div>
+        <a href="${a.stored_path}" download="${e(a.original_name)}" class="btn-3d alt py-1 px-2 ms-2"><i class="bi bi-download"></i></a>
+      </div>
+    </div>
+  `).join("") : '<p class="small mb-0" style="color:var(--mute);">No files uploaded for this issue.</p>';
+
+  const comments = (db.comments || []).filter(c => String(c.issue_id) === String(issueId));
+  document.getElementById("ivComments").innerHTML = comments.length ? comments.map(cm => {
+    const sender = userMap[String(cm.sender_id)] || { full_name: "Staff", role: "intern" };
+    return `
+      <div class="p-3 rounded-3" style="background:var(--indigo-50);border:1px solid var(--edge);">
+        <div class="d-flex justify-content-between mb-1">
+          <span class="small fw-bold text-info">${e(sender.full_name)} <span class="tag-pill ${sender.role === "admin" ? "tag-purple" : "tag-cyan"} text-uppercase ms-1">${e(sender.role)}</span></span>
+          <small style="color:var(--mute);">${e(String(cm.created_at).slice(0, 16))}</small>
+        </div>
+        <div class="small" style="white-space:pre-line;">${e(cm.message)}</div>
+      </div>
+    `;
+  }).join("") : '<p class="small text-center py-3" style="color:var(--mute);">No updates posted yet.</p>';
+
+  const notes = (db.internal_notes || []).filter(n => String(n.issue_id) === String(issueId)).reverse();
+  document.getElementById("notesList").innerHTML = notes.length ? notes.map(n => {
+    const au = userMap[String(n.author_id)] || { full_name: "Staff" };
+    return `<div class="p-2 rounded small" style="background:#fffbeb;border:1px solid #f59e0b;"><div class="fw-bold text-warning">${e(au.full_name)}</div><div>${e(n.note)}</div></div>`;
+  }).join("") : '<small style="color:var(--mute);">No internal notes recorded.</small>';
+
+  const hist = (db.history || []).filter(h => String(h.issue_id) === String(issueId)).reverse();
+  document.getElementById("historyList").innerHTML = hist.map(h => {
+    const actor = userMap[String(h.changed_by)] || { full_name: "Staff", role: "" };
+    return `
+      <div class="border-start border-2 ps-3 pb-3" style="border-color:var(--indigo-500)!important;">
+        <div class="small fw-bold">${h.previous_status ? e(h.previous_status) + " &rarr; " : ""}${e(h.new_status)}</div>
+        <div class="small" style="color:var(--mute);">${e(h.remarks)}</div>
+        <div style="font-size:0.72rem;color:var(--indigo-600);">By ${e(actor.full_name)} &bull; ${e(String(h.created_at).slice(0, 19))}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+document.getElementById("assignForm").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const newInt = document.getElementById("assignSelect").value;
+  const note = document.getElementById("assignNote").value.trim();
+  await GSheetDB.post({ action: "update", sheet: "issues", keyVal: issueId, data: { assigned_intern_id: newInt, status: "Assigned" } });
+  await GSheetDB.post({ action: "insert", sheet: "issue_assignments", data: { issue_id: issueId, intern_id: newInt, assigned_by: user.id, notes: note } });
+  await GSheetDB.post({ action: "insert", sheet: "issue_history", data: { issue_id: issueId, changed_by: user.id, previous_status: issue.status, new_status: "Assigned", remarks: note || `Reassigned by ${user.full_name}` } });
+  await GSheetDB.post({ action: "insert", sheet: "notifications", data: { user_id: newInt, issue_id: issueId, title: `Issue Assigned: ${issue.tracker_id}`, message: `${user.full_name} assigned ${issue.tracker_id} to you.`, type: "info", is_read: 0 } });
+  window.showToast("Intern assigned!");
+  loadIssue();
+});
+
+document.getElementById("adminOverrideForm").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const st = document.getElementById("admStatus").value;
+  const pr = document.getElementById("admPriority").value;
+  const cat = document.getElementById("admCat").value;
+  const upd = { status: st, priority: pr, category_id: cat };
+  if (st === "Resolved" && !issue.resolved_at) upd.resolved_at = new Date().toISOString();
+  await GSheetDB.post({ action: "update", sheet: "issues", keyVal: issueId, data: upd });
+  await GSheetDB.post({ action: "insert", sheet: "issue_history", data: { issue_id: issueId, changed_by: user.id, previous_status: issue.status, new_status: st, remarks: `Admin override by ${user.full_name}` } });
+  window.showToast("Admin changes saved");
+  loadIssue();
+});
+
+document.getElementById("internResForm").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const st = document.getElementById("intStatus").value;
+  const det = document.getElementById("intResDetails").value.trim();
+  if (st === "Resolved" && !det) return window.showToast("Resolution details required when marking Resolved");
+  const upd = { status: st, resolution_details: det };
+  if (st === "Resolved") upd.resolved_at = new Date().toISOString();
+  await GSheetDB.post({ action: "update", sheet: "issues", keyVal: issueId, data: upd });
+  await GSheetDB.post({ action: "insert", sheet: "issue_history", data: { issue_id: issueId, changed_by: user.id, previous_status: issue.status, new_status: st, remarks: det || `Updated by ${user.full_name}` } });
+  window.showToast("Workflow updated");
+  loadIssue();
+});
+
+document.getElementById("replyForm").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const msg = document.getElementById("replyMsg").value.trim();
+  const infoReq = document.getElementById("infoReqChk").checked ? 1 : 0;
+  await GSheetDB.post({ action: "insert", sheet: "issue_comments", data: { issue_id: issueId, sender_id: user.id, message: msg, is_info_request: infoReq, is_read: 0 } });
+  document.getElementById("replyMsg").value = "";
+  window.showToast("Update posted");
+  loadIssue();
+});
+
+document.getElementById("noteForm").addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const note = document.getElementById("noteText").value.trim();
+  await GSheetDB.post({ action: "insert", sheet: "internal_notes", data: { issue_id: issueId, author_id: user.id, note } });
+  document.getElementById("noteText").value = "";
+  window.showToast("Internal note saved");
+  loadIssue();
+});
+
+loadIssue();
+
+  </script>
+</body>
+</html>
